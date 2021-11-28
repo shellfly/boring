@@ -23,7 +23,7 @@ type logger struct {
 	level LogLevel
 }
 
-var std = New(os.Stderr, "", log.LstdFlags)
+var std = New(os.Stderr, "", log.LstdFlags|log.Llongfile)
 
 func New(out io.Writer, prefix string, flag int) *logger {
 	l := log.New(out, prefix, flag)

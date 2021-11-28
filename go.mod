@@ -1,3 +1,3 @@
-module github.com/shellfly/socks5
+module github.com/shellfly/boring
 
 go 1.17
