@@ -23,7 +23,7 @@ type logger struct {
 	level LogLevel
 }
 
-var std = New(os.Stderr, "", log.LstdFlags|log.Llongfile)
+var std = New(os.Stderr, "", log.LstdFlags)
 
 func New(out io.Writer, prefix string, flag int) *logger {
 	l := log.New(out, prefix, flag)
@@ -56,6 +56,7 @@ func Debug(v ...interface{}) {
 	if std.level > LevelDebug {
 		return
 	}
+	v = append([]interface{}{"[debug] "}, v...)
 	std.l.Print(v...)
 }
 
@@ -65,6 +66,7 @@ func Debugf(format string, v ...interface{}) {
 	if std.level > LevelDebug {
 		return
 	}
+	format = "[debug] " + format
 	std.l.Printf(format, v...)
 }
 
@@ -74,6 +76,7 @@ func Debugln(v ...interface{}) {
 	if std.level > LevelDebug {
 		return
 	}
+	v = append([]interface{}{"[debug] "}, v...)
 	std.l.Println(v...)
 }
 
@@ -83,6 +86,7 @@ func Info(v ...interface{}) {
 	if std.level > LevelInfo {
 		return
 	}
+	v = append([]interface{}{"[info]  "}, v...)
 	std.l.Print(v...)
 }
 
@@ -92,6 +96,7 @@ func Infof(format string, v ...interface{}) {
 	if std.level > LevelInfo {
 		return
 	}
+	format = "[info]  " + format
 	std.l.Printf(format, v...)
 }
 
@@ -101,6 +106,7 @@ func Infoln(v ...interface{}) {
 	if std.level > LevelInfo {
 		return
 	}
+	v = append([]interface{}{"[info]  "}, v...)
 	std.l.Println(v...)
 }
 
@@ -110,6 +116,7 @@ func Warn(v ...interface{}) {
 	if std.level > LevelWarn {
 		return
 	}
+	v = append([]interface{}{"[warn]  "}, v...)
 	std.l.Print(v...)
 }
 
@@ -119,6 +126,7 @@ func Warnf(format string, v ...interface{}) {
 	if std.level > LevelWarn {
 		return
 	}
+	format = "[warn]  " + format
 	std.l.Printf(format, v...)
 }
 
@@ -128,6 +136,7 @@ func Warnln(v ...interface{}) {
 	if std.level > LevelWarn {
 		return
 	}
+	v = append([]interface{}{"[warn]  "}, v...)
 	std.l.Println(v...)
 }
 
@@ -137,6 +146,7 @@ func Error(v ...interface{}) {
 	if std.level > LevelError {
 		return
 	}
+	v = append([]interface{}{"[error] "}, v...)
 	std.l.Print(v...)
 }
 
@@ -146,6 +156,7 @@ func Errorf(format string, v ...interface{}) {
 	if std.level > LevelError {
 		return
 	}
+	format = "[error] " + format
 	std.l.Printf(format, v...)
 }
 
@@ -155,6 +166,7 @@ func Errorln(v ...interface{}) {
 	if std.level > LevelError {
 		return
 	}
+	v = append([]interface{}{"[error] "}, v...)
 	std.l.Println(v...)
 }
 

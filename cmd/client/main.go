@@ -4,12 +4,14 @@ import (
 	"flag"
 
 	"github.com/shellfly/boring"
+	"github.com/shellfly/boring/pkg/crypto"
 	log "github.com/shellfly/boring/pkg/log"
 )
 
 var (
 	addr     = flag.String("addr", ":1081", "tunnel client listen addr")
 	server   = flag.String("server", "", "tunnel server addr")
+	method   = flag.String("method", "", "encryption method")
 	key      = flag.String("key", "", "encryption key")
 	logLevel = flag.String("log.level", "info", "log level")
 )
@@ -18,6 +20,7 @@ func main() {
 	flag.Parse()
 	log.SetLevel(*logLevel)
 	log.Infof("Start boring client on %s", *addr)
-	cli := boring.NewClient(*addr, *server, *key)
+	crypto := crypto.NewCrypto(*method, *key)
+	cli := boring.NewClient(*addr, *server, crypto)
 	log.Panic(cli.ListenAndServe())
 }

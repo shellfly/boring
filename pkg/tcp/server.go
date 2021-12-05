@@ -10,8 +10,7 @@ import (
 )
 
 type ConnHandler interface {
-	Init(net.Conn)
-	ServeConn(context.Context)
+	ServeConn(context.Context, net.Conn)
 }
 
 type Server struct {
@@ -38,7 +37,7 @@ func (srv *Server) Serve(l net.Listener) error {
 	var tempDelay time.Duration // how long to sleep on accept failure
 
 	for {
-		rw, e := l.Accept()
+		conn, e := l.Accept()
 		if e != nil {
 			if ne, ok := e.(net.Error); ok && ne.Temporary() {
 				if tempDelay == 0 {
@@ -49,7 +48,7 @@ func (srv *Server) Serve(l net.Listener) error {
 				if max := 1 * time.Second; tempDelay > max {
 					tempDelay = max
 				}
-				log.Errorf("socks5: Accept error: %v; retrying in %v", e, tempDelay)
+				log.Errorf("Accept error: %v; retrying in %v", e, tempDelay)
 				time.Sleep(tempDelay)
 				continue
 			}
@@ -57,8 +56,7 @@ func (srv *Server) Serve(l net.Listener) error {
 		}
 
 		baseCtx := context.Background()
-		srv.handler.Init(rw)
-		go srv.handler.ServeConn(baseCtx)
+		go srv.handler.ServeConn(baseCtx, conn)
 	}
 }
 
