@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	addr     = flag.String("addr", ":1080", "boring server listen addr")
+	addr     = flag.String("addr", ":1081", "boring server listen addr")
 	method   = flag.String("method", "", "encryption method")
 	key      = flag.String("key", "", "encryption key")
 	logLevel = flag.String("log.level", "info", "log level")

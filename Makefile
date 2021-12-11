@@ -1,3 +1,4 @@
+.PHONY: build
 
 build:
 	GOARCH=amd64 GOOS=darwin go build -o build/client-darwin ./cmd/client
