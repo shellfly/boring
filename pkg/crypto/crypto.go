@@ -6,7 +6,6 @@ import (
 	"crypto/cipher"
 	"crypto/md5"
 	"crypto/rand"
-	"fmt"
 	"io"
 	"net"
 
@@ -14,21 +13,18 @@ import (
 )
 
 const (
-	MaxPayloadSize = 32 * 1024
+	MaxPayloadSize = 64 * 1024
 )
 
-type CipherFunc func([]byte) (cipher.Block, error)
-type CryptFunc func([]byte) []byte
-
 type Crypto interface {
-	Conn(net.Conn) net.Conn
+	EncryptConn(net.Conn) net.Conn
 }
 
 type dummy struct{}
 
-func (dummy) Conn(c net.Conn) net.Conn { return c }
+func (dummy) EncryptConn(c net.Conn) net.Conn { return c }
 
-type aesC struct {
+type aesCipher struct {
 	key string
 }
 
@@ -37,22 +33,21 @@ func NewCrypto(method, key string) Crypto {
 	case "dummy":
 		return &dummy{}
 	case "aes":
-		return &aesC{key}
+		return &aesCipher{key}
 	default:
 		panic("unimplemented method")
 	}
 }
 
-func (a *aesC) Conn(conn net.Conn) net.Conn {
+func (a *aesCipher) EncryptConn(conn net.Conn) net.Conn {
 	var k []byte
+	// convert [16]byte to []byte
 	for _, b := range md5.Sum([]byte(a.key)) {
 		k = append(k, b)
 	}
 	block, _ := aes.NewCipher(k)
 	return &CryptConn{
-		Conn: conn,
-		// bufr:  bufio.NewReader(conn),
-		// bufw:  bufio.NewWriter(conn),
+		Conn:  conn,
 		block: block,
 		buf:   make([]byte, MaxPayloadSize),
 	}
@@ -62,18 +57,11 @@ type CryptConn struct {
 	net.Conn
 	block cipher.Block
 
-	//r *reader
-	//	bufr  *bufio.Reader
-	//	bufw  *bufio.Writer
 	buf      []byte
 	leftover []byte
 }
 
 func (cc *CryptConn) Read(b []byte) (n int, err error) {
-	defer func() {
-		fmt.Println("read data :", len(b), b)
-	}()
-	fmt.Println("want to read length, leftover", len(b), len(cc.leftover))
 	if len(cc.leftover) > 0 {
 		n := copy(b, cc.leftover)
 		cc.leftover = cc.leftover[n:]
@@ -86,7 +74,6 @@ func (cc *CryptConn) Read(b []byte) (n int, err error) {
 		return
 	}
 	m := copy(b, cc.buf[:n])
-	fmt.Println("m,n", m, n)
 	if m < n { // insufficient len(b), keep leftover for next read
 		cc.leftover = cc.buf[m:n]
 	}
@@ -102,22 +89,26 @@ func (cc *CryptConn) read() (n int, err error) {
 	}
 
 	datalen := int(buf[0])<<24 | int(buf[1])<<16 | int(buf[2])<<8 | int(buf[3])
-	fmt.Println("cryptconn read lenbuf:", buf[:4], datalen)
+	log.Debug("read datalen: ", datalen)
 	n, err = io.ReadFull(cc.Conn, buf[:datalen])
 	if err != nil {
 		log.Error("read from cryptconn error: ", err)
 		return
 	}
 	data := cc.Decrypt(buf[:datalen])
-	fmt.Println("read decrypt data: ", data, len(data))
 	return copy(cc.buf, data), nil
 }
 
 func (cc *CryptConn) Write(b []byte) (n int, err error) {
-	fmt.Println("write data: ", len(b), b)
 	data := cc.Encrypt(b)
 	length := len(data)
-	cc.Conn.Write([]byte{byte(length >> 24), byte(length >> 16), byte(length >> 8), byte(0xFF & length)})
+	log.Debug("origin data length", len(b))
+	log.Debug("encrypt data length", len(data))
+	_, err = cc.Conn.Write([]byte{byte(length >> 24), byte(length >> 16), byte(length >> 8), byte(0xFF & length)})
+	if err != nil {
+		log.Error("write datalen to cryptconn error: ", err)
+		return
+	}
 	_, err = cc.Conn.Write(data)
 	if err != nil {
 		log.Error("write data to cryptconn error: ", err)

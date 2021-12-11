@@ -18,7 +18,7 @@ type Server struct {
 
 func (s *Server) ServeConn(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
-	conn = s.crypto.Conn(conn)
+	conn = s.crypto.EncryptConn(conn)
 	addr, err := socks.ReadAddr(conn)
 	if err != nil {
 		log.Error("ReadAddr error: ", err)

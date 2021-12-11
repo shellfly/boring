@@ -22,15 +22,16 @@ func (c *Client) socksHandler(ctx context.Context, rw net.Conn, addr socks.Addr)
 	remote, err := net.Dial("tcp", c.remoteAddr)
 	if err != nil {
 		log.Error("Connect to boring remote server error", err)
+		return
 	}
 	defer remote.Close()
-	remote = c.crypto.Conn(remote)
+	remote = c.crypto.EncryptConn(remote)
 	if _, err := remote.Write(addr); err != nil {
-		log.Error("send addr to remote server err:", err)
+		log.Error("Send addr to boring remote server err:", err)
 		return
 	}
 
-	log.Debug("start boring process for: ", addr)
+	log.Debug("Start boring process for: ", addr)
 	Boring(rw, remote)
 }
 
@@ -38,7 +39,7 @@ func (c *Client) socksHandler(ctx context.Context, rw net.Conn, addr socks.Addr)
 // to accept proxy requests.
 func NewClient(localAddr, remoteAddr string, crypto crypto.Crypto) *Client {
 	c := &Client{}
-	c.Server = socks.NewSocks5Server(localAddr, c.socksHandler)
+	c.Server = socks.NewSocksServer(localAddr, c.socksHandler)
 	c.crypto = crypto
 	c.remoteAddr = remoteAddr
 	return c

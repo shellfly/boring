@@ -60,7 +60,7 @@ type socks struct {
 	handler Handler
 }
 
-func NewSocks5Server(addr string, handler Handler) *tcp.Server {
+func NewSocksServer(addr string, handler Handler) *tcp.Server {
 	s := &socks{handler: handler}
 	return tcp.NewServer(addr, s)
 }
